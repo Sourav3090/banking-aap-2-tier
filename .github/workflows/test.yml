@@ -14,37 +14,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Explicitly set Node version to avoid runner warnings
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
+      - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::594474085977:role/github-action-deploy-role
           aws-region: us-west-1
 
-      - name: Print Private IPs via SSM
+      - name: Print Private IPs
         run: |
-          set -e
-
           CMD_ID=$(aws ssm send-command \
             --targets "Key=tag:App,Values=flask" \
             --document-name "AWS-RunShellScript" \
-            --parameters '{"commands":["hostname -i"]}' \
-            --timeout-seconds 60 \
+            --parameters '{"commands":["hostname -I"]}' \
             --query 'Command.CommandId' \
-            --output text
-          )
+            --output text)
 
-          echo "Command ID: $CMD_ID"
-
-          sleep 10
+          sleep 30
 
           aws ssm list-command-invocations \
             --command-id "$CMD_ID" \
             --details \
-            --query "CommandInvocations[*].{Instance:InstanceId,Status:Status,Output:CommandPlugins[0].Output}" \
+            --query "CommandInvocations[*].{Instance:InstanceId,IP:CommandPlugins[0].Output}" \
             --output table
