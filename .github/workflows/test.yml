@@ -1,6 +1,6 @@
-name : Test Workflow
+name: Test Workflow
 
-on: 
+on:
   push:
     branches:
       - main
@@ -19,19 +19,25 @@ jobs:
           role-to-assume: arn:aws:iam::594474085977:role/github-action-deploy-role
           aws-region: us-west-1
 
-      - name: Print Private IPs
+      - name: Print Private IPs via SSM
         run: |
+          set -e
+
           CMD_ID=$(aws ssm send-command \
             --targets "Key=tag:App,Values=flask" \
             --document-name "AWS-RunShellScript" \
-            --parameters '{"commands":["hostname -I"]}' \
-            --query 'Command.CommandId' --output text
+            --parameters '{"commands":["hostname -i"]}' \
+            --timeout-seconds 60 \
+            --query 'Command.CommandId' \
+            --output text
           )
 
-          sleep 30
+          echo "Command ID: $CMD_ID"
+
+          sleep 10
 
           aws ssm list-command-invocations \
             --command-id "$CMD_ID" \
             --details \
-            --query "CommandInvocations[*].{Instance:InstanceId,IP:CommandPlugins[0].Output}" \
+            --query "CommandInvocations[*].{Instance:InstanceId,Status:Status,Output:CommandPlugins[0].Output}" \
             --output table
