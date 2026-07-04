@@ -1,6 +1,6 @@
-name: Test Workflow
+name : Test Workflow
 
-on:
+on: 
   push:
     branches:
       - main
@@ -14,8 +14,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::594474085977:role/github-action-deploy-role
@@ -27,8 +25,8 @@ jobs:
             --targets "Key=tag:App,Values=flask" \
             --document-name "AWS-RunShellScript" \
             --parameters '{"commands":["hostname -I"]}' \
-            --query 'Command.CommandId' \
-            --output text)
+            --query 'Command.CommandId' --output text
+          )
 
           sleep 30
 
