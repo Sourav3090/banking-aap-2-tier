@@ -17,17 +17,43 @@ jobs:
           role-to-assume: arn:aws:iam::594474085977:role/github-action-deploy-role
           aws-region: us-west-1
 
-      - name: Print private IPs
+      - name: Fleet health check
+        id: health
         run: |
           CMD_ID=$(aws ssm send-command \
             --targets "Key=tag:App,Values=flask" \
             --document-name "AWS-RunShellScript" \
-            --parameters '{"commands":["hostname -I"]}' \
-            --query 'Command.CommandId' --output text)
+            --parameters '{"commands":["hostname -I"
+            "docker --version 2>/dev/null || echo Docker not installed",
+            "aws --version 22>/dev/null || echo AWS CLI not installed",
+            "mysql --version 2>/dev/null || echo MySQL not installed",
+            "aws ssm get-parameters-by-path /application/banking --with-decryption --region us-west-1"
+            ]}' \
+            --query 'Command.CommandId' --output text \
+            --region us-west-1)
+          echo "cmd_id"=$"CMD_ID" >> $GITHUB_OUTPUT
 
-          sleep 15
+      - name: Show Results
+        run:
+          sleep 20
 
           aws ssm list-command-invocations \
-            --command-id "$CMD_ID" --details \
+            --command-id "${{steps.health.outputs.cmd_id}}" --details \
+            --region us-west-1 \
             --query "CommandInvocations[*].{Instance:InstanceId,IP:CommandPlugins[0].Output}" \
             --output table
+
+
+          FAILED=$(aws ssm list-command-invocations \
+            --command-id "${{steps.health.outputs.cmd_id}}" --details \
+            --query "length(commandinvocations[?status=='Failed'])" \
+            --output text \
+            --region us-west-1
+            )
+
+
+          [ "$FAILED_" -gt 0 ] && \
+           echo "::error::Health check Failed on $FAILED_ instance(s)" && \
+           exit 1 
+
+           echo "All Instances Healthy ✅"
