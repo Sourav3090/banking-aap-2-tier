@@ -23,7 +23,7 @@ jobs:
 
       - name: Upload smoke_test.py to S3
         run: |
-          aws s3 mb s3://594474085977-devops-scripts --region us-west-1 2>/dev/null || true
+          aws s3 mb s3://594474085977-devops-scripts --region us-east-1 2>/dev/null || true
           aws s3 cp smoke_test.py s3://594474085977-devops-scripts/smoke_test.py --region us-west-1
 
       - name: Run Smoke Test on Fleet
@@ -40,7 +40,7 @@ jobs:
             ]}' \
             --query 'Command.CommandId' \
             --output text \
-            --region us-west-1)
+            --region us-east-1)
           echo "cmd_id=$CMD_ID" >> $GITHUB_OUTPUT
 
       - name: Show Results
@@ -63,4 +63,4 @@ jobs:
             echo "::error::Smoke test failed on $FAILED instance(s)!" && \
             exit 1
 
-          echo "✅ Smoke Test Passed"
+          echo "✅ Smoke Test Passed!"
