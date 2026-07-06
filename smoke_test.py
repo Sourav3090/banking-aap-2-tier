@@ -26,10 +26,12 @@ if missing:
 #DB FIND banking_db and show tables
 try:
     connection = pymysql.connect(
-    host=params["DB_HOST"],
-    user=params["DB_USER"],
-    password=params["DB_PASSWORD"],
-    port=int(params["DB_PORT"])
+        host=params["DB_HOST"],
+        user=params["DB_USER"],
+        password=params["DB_PASSWORD"],
+        database=params["DB_NAME"],
+        port=int(params["DB_PORT"])
+        
     )
 
     cur=connection.cursor()

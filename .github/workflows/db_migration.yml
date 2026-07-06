@@ -1,0 +1,29 @@
+name: Intializing Database
+
+on:
+  workflow_dispatch
+
+permission:
+  id_token: write
+  contents:
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Sourav3090/banking-app-2-tier
+          ref: main
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::594474085977:role/github-action-deploy-role
+          aws-region: us-west-1
+
+      - name: Upload file on S3
+        run: |
+           aws s3 mb s3://594474085977-devops-scripts --region us-west-1 2>/dev/null || true
+           aws s3 cp init.sql s3://594474085977-devops-scripts/init.sql
+           aws s3 cp init.py s3://594474085977-devops-scripts/init.py
+           echo " Files Uploaded to bucket..."
