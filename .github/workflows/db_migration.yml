@@ -5,7 +5,7 @@ on:
 
 permission:
   id_token: write
-  contents:
+  contents: read
 
 jobs:
   init:
@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: Sourav3090/banking-app-2-tier
+          repository: Sourav3090/banking-aap-2-tier
           ref: main
 
       - uses: aws-actions/configure-aws-credentials@v4
