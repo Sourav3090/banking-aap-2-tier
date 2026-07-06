@@ -3,12 +3,12 @@ name: Intializing Database
 on:
   workflow_dispatch
 
-permission:
-  id_token: write
+permissions:
+  id-token: write
   contents: read
 
 jobs:
-  init:
+  init-db:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +23,7 @@ jobs:
 
       - name: Upload file on S3
         run: |
-           aws s3 mb s3://594474085977-devops-scripts --region us-west-1 2>/dev/null || true
-           aws s3 cp init.sql s3://594474085977-devops-scripts/init.sql
-           aws s3 cp init.py s3://594474085977-devops-scripts/init.py
-           echo " Files Uploaded to bucket..."
+          aws s3 mb s3://594474085977-devops-scripts --region us-east-1 2>/dev/null || true
+          aws s3 cp init.sql s3://594474085977-devops-scripts/init.sql 
+          aws s3 cp init.py s3://594474085977-devops-scripts/init.py 
+          echo "✅ Files Uploaded to bucket.."
