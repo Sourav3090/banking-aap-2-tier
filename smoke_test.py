@@ -1,4 +1,5 @@
 import boto3 ,os,sys
+import pymysql
 client=boto3.client('ssm', region_name='us-west-1')
 params={
     os.pathbasename(p["Name"],p["value"])
@@ -31,7 +32,7 @@ try:
         password=params["DB_PASSWORD"],
         database=params["DB_NAME"],
         port=int(params["DB_PORT"])
-        
+
     )
 
     cur=connection.cursor()
