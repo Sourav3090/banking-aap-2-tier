@@ -11,7 +11,7 @@ env:
   VERSION: v1
   REGISTRY: 594474085977.dkr.ecr.us-west-1.amazonaws.com
   REPOSITORY: flaskapp-simple-bank
-  REGION: us-east-1
+  REGION: us-west-1
   S3_BUCKET_NAME: 594474085977-devops-scripts
   TARGET_TAG_KEY: App                         
   TARGET_TAG_VALUE: flask                     
