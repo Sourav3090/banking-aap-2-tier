@@ -1,7 +1,7 @@
 import os
 import random
 import boto3
-from flask import Flask, render_template, request, redirect, session
+from Flask  import Flask, render_template, request, redirect, session
 import pymysql
 
 
