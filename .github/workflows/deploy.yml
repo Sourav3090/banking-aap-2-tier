@@ -1,53 +1,72 @@
-name : Application Deploying On AWS
+name: Application Deploying on AWS
 
 on:
   workflow_call:
 
-  
 permissions:
   id-token: write
-  contents: read  
+  contents: read
 
 env:
   VERSION: v1
-  IMAGE: 594474085977.dkr.ecr.us-east-1.amazonaws.com/flaskapp-simple-bank
+  REGISTRY: 594474085977.dkr.ecr.us-west-1.amazonaws.com
+  REPOSITORY: flaskapp-simple-bank
   REGION: us-east-1
-  S3_BUCKET: s3://594474085977-devops-scripts
+  S3_BUCKET_NAME: 594474085977-devops-scripts
+  TARGET_TAG_KEY: App                         
+  TARGET_TAG_VALUE: flask                     
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
           repository: Sourav3090/banking-aap-2-tier
           ref: main
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Set Dynamic Image Tag
+        run: |
+          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::594474085977:role/github-action-deploy-role
+          role-to-assume: arn:aws:iam::416394563192:role/github-action-deploy-role
           aws-region: ${{ env.REGION }}
 
       - name: Login to ECR
+        id: login-ecr
         run: |
           aws ecr get-login-password --region ${{ env.REGION }} | \
-          docker login --username AWS --password-stdin \
-          594474085977.dkr.ecr.${{ env.REGION }}.amazonaws.com
-          echo "Login Successfull to ECR ✅"
+          docker login --username AWS --password-stdin ${{ env.REGISTRY }}
+          echo "Login successfully to ECR ✅"
 
-      - name: Build and Push image
+      - name: Build, Tag, and Push Docker Image
         run: |
-          docker build -t ${{env.IMAGE}}:${{env.VERSION}} .
-          docker push ${{env.IMAGE}}:${{env.VERSION}}
-          echo "Image Pushed : ${{env.VERSION}} ✅"
-      
+          docker build -t ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }} .
+          docker tag ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }} ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest
+          
+          docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest
+          echo "Docker image pushed to ECR successfully! 🚀"
 
-      - name: Upload Docker-Compose to S3
+      - name: Upload Docker Compose Configuration to S3
         run: |
-          aws s3 cp docker-compose.yml ${{ env.S3_BUCKET }}/docker-compose.yml --region ${{ env.REGION }}
-          echo "Docker compose Uploaded ✅"
+          aws s3 cp docker-compose.yml s3://${{ env.S3_BUCKET_NAME }}/docker-compose.yml
+          echo "docker-compose.yml synchronized to S3 bucket! 📦"
 
-      # - name: Deploy via SSM
-      
-
-    
+      - name: Execute Remote Deployment via AWS SSM Tag Targeting
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:${{ env.TARGET_TAG_KEY }},Values=${{ env.TARGET_TAG_VALUE }}" \
+            --parameters 'commands=["/home/ubuntu/deploy.sh"]' \
+            --comment "Automated tag-targeted deployment pipeline delivery for simplebank" \
+            --query "Command.CommandId" \
+            --output text)
+          
+          echo "SSM Tag-Targeted Command triggered successfully. Command ID: $COMMAND_ID"
+          echo "Deployment initiated on all target fleet nodes matching ${{ env.TARGET_TAG_KEY }}=${{ env.TARGET_TAG_VALUE }}! ⚡"
