@@ -1,17 +1,17 @@
-import os
-import random
+import os 
 import boto3
-from Flask  import Flask, render_template, request, redirect, session
+import random
+from flask import Flask, render_template, request, redirect, session
 import pymysql
-
+from dotenv import load_dotenv
 
 if os.getenv("FLASK_ENV") == "production":
-    client=boto3.client("ssm",region_name="us-west-1")
+    client=boto3.client("ssm",region_name="us-east-1")
     for p in client.get_parameters_by_path(
-        Path="/application/banking",
+        Path="/application/testing",
         WithDecryption=True
-    )["Parameters"]:
-        os.environ.setdefault(os.path.basename(p["Name"]),p["Value"])
+        )["Parameters"]:
+          os.environ.setdefault(os.path.basename(p["Name"]),p["Value"])
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallbacksecret")
@@ -20,7 +20,7 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallbacksecret")
 def get_db_connection():
     return pymysql.connect(
         host=os.getenv('DB_HOST'),
-        port=int(os.getenv('DB_PORT',3306)),
+        port=int(os.getenv('DB_PORT')),
         user=os.getenv('DB_USER'),
         password=os.getenv('DB_PASSWORD'),
         db=os.getenv('DB_NAME'),
@@ -32,12 +32,11 @@ def get_db_connection():
 def generate_account_number():
     return str(random.randint(10**9, 10**10 - 1))
 
-
-# ─── Home ───────────────────────────────────────────────
 @app.route('/health')
 def health():
-    return True
+    return "OK" , 200
 
+# ─── Home ───────────────────────────────────────────────
 @app.route('/')
 def home():
     return render_template('home.html')
@@ -131,8 +130,3 @@ def dashboard():
     accounts = cur.fetchall()
     conn.close()
     return render_template('dashboard.html', accounts=accounts)
-
-
-# ─── Run ────────────────────────────────────────────────
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
